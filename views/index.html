@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html >
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BD</title>
+    
+</head>
+<body>
+    <button style="padding: 8px;" onclick="listOfArticles()">Список статей</button>
+    <input id= "text", style="padding: 8px;" type="text"></input>
+    <button style="padding: 8px;" onclick="searchByName()">Поиск по названию</button>
+    <select id="spisok"  style="padding: 8px;" >
+        <option >---Автор---</option>
+    </select>
+    <button style="padding: 8px;" name="authorSearch" onclick="searchByAuthor()">Поиск по автору</button>
+    <button style="padding: 8px;" name="Top" onclick="TopArticles()">Топ статей</button>
+    
+    <br><br><form action="">
+        с <input style="padding: 8px;" id="keyDate1" type="text" value="yyyy-mm-dd"> по <input style="padding: 8px;" id="keyDate2" type="text" value="yyyy-mm-dd">
+    </form>
+    <br> <button style="padding: 8px;" onclick="dateSearch()">Поиск по дате</button>
+    <script>
+        async function listOfArticles(){
+
+         const response = await fetch("/api/auth", {
+            method: "GET",
+            headers: { "Accept": "application/json" }
+            })
+            if (response.ok === true) {
+            const articles = await response.json()
+            // Перебор названия        
+            var output = ""
+            for (var i = 0; i < articles.length; ++i) {
+                
+                output += "<h2>"+[i+1]+". " + articles[i].title + "</h2>"
+                 
+            // Перебор авторов
+            output += "<h3>Автор: </h3>";               
+            for (var j = 0; j < articles[i].authors.length; ++j) {
+                output += "<li>" + articles[i].authors[j]+ "</li>"
+            }
+            output += "<h3>Дата размещения: </h3>"  ;
+            output += "<li>"+ articles[i].publication_date + "</li>"
+            output += "<button style='padding: 8px; onclick='Delete()'>Удалить</button>"
+
+
+
+                       
+        }
+            document.getElementById("articles").innerHTML = output
+                   
+           }
+        } 
+
+
+        function Delete(){
+            console.log('Получилось')
+        }
+
+
+        async function TopArticles() {
+        const response = await fetch("/api/auth", {
+            method: "GET",
+            headers: { "Accept": "application/json" }
+        })
+        if (response.ok === true) {
+            const articles = await response.json()
+                articles.sort(compareNumbers)
+                var output = ""
+                for (var i = 0; i < articles.length; ++i) {
+                    output += "<h2>"+[i+1]+". " + articles[i].title + "</h2>" 
+                }
+                document.getElementById("articles").innerHTML = output
+            }
+        }
+        function compareNumbers(a, b) {
+            var reviewA = a.review.length
+            var rateA = 0
+            for (var j = 0; j < reviewA; ++j) {
+                rateA += a.review[j].rating
+            }
+            var ratingA = rateA/reviewA
+
+            var reviewB = b.review.length
+            var rateB = 0
+            for (var j = 0; j < reviewB; ++j) {
+                rateB += b.review[j].rating
+            }
+            var ratingB = rateB/reviewB
+
+            if (ratingB > ratingA) {
+                return 1
+            }
+            if (ratingA < ratingB) {
+                return -1
+            }
+            if (ratingA = ratingB) {
+                if (reviewB >reviewA) {
+                    return 1
+                } else {
+                    return -1
+                }
+            }
+        }
+        async function dateSearch(){
+
+            const response = await fetch("/api/auth", {
+            method: "GET",
+            headers: { "Accept": "application/json" }
+            })
+            if (response.ok === true) {
+            
+            var keyDate1 = document.querySelector('#keyDate1');
+            var keyDate2 = document.querySelector('#keyDate2');
+            console.log(new Date(keyDate1.value) > new Date(keyDate2.value));
+
+            // получаем данные
+            const articles = await response.json()
+            var output= ""
+            for (var i = 0; i < articles.length; ++i) {
+                for (var j = 0; j < articles[i].authors.length; ++j) {
+                    if (new Date(articles[i].publication_date) >= new Date(keyDate1.value) && new Date(articles[i].publication_date) <= new Date(keyDate2.value)) {
+                        output += "<h2>"+[i+1]+". " + articles[i].title + "</h2>"
+                        output += "<h3>Автор: </h3>";  
+                        output += "<li>" + articles[i].authors[j]+ "</li>" 
+                        output += "<h3>Дата размещения: </h3>"  ;
+                        output += "<li>"+ articles[i].publication_date + "</li>"
+                    }
+                }
+            }
+            document.getElementById("articles").innerHTML = output
+         }
+        }
+
+        
+        async function searchByName() {
+            let input = document.getElementById('text').value.toLowerCase()
+            if (input != "") {
+                const response = await fetch("/api/auth/title/" + input, {
+                    method: "GET",
+                    headers: { "Accept": "application/json" }
+                })
+                if (response.ok === true) {
+                const articles = await response.json()
+                var output = ""
+                for (var i = 0; i < articles.length; ++i) {
+                output += "<h2>"+[i+1]+". " + articles[i].title + "</h2>"
+                         
+                    document.getElementById("articles").innerHTML = output
+                }
+            } else {
+                listOfArticles()
+            }
+            }
+        }
+
+    async function SpisokJounrals() {
+        // отправляет запрос и получаем ответ
+        const response = await fetch("/api/auth", {
+                method: "GET",
+                headers: { "Accept": "application/json" }
+        })
+        if (response.ok === true) {
+            const articles = await response.json()
+            for (var i = 0; i < articles.length; ++i) {
+                for (var j = 0; j < articles[i].authors.length; ++j) {
+                    var s = document.getElementById('spisok');
+                    var opt = document.createElement('option');
+                    opt.textContent = articles[i].authors[j];
+                    opt.value = articles[i].authors[j];
+                    s.appendChild(opt)
+                }
+            }
+        }
+    }
+
+    SpisokJounrals();
+
+    async function searchByAuthor(){
+        
+        var e = document.getElementById('spisok')
+        var z = e.value
+        const response = await fetch("/api/auth", {
+                method: "GET",
+                headers: { "Accept": "application/json" }
+        })
+        if (response.ok === true) {
+            const articles = await response.json()
+            var output = ""
+            for (var i = 0; i < articles.length; ++i) {
+                for (var j = 0; j < articles[i].authors.length; ++j) {
+                    if(articles[i].authors[j].includes(z)){
+                        output += "<h2>"+[i+1]+". " + articles[i].title + "</h2>"
+                        output += "<h3>Автор: </h3>";  
+                        output += "<li>" + articles[i].authors[j]+ "</li>" 
+                        output += "<h3>Дата размещения: </h3>"  ;
+                        output += "<li>"+ articles[i].publication_date + "</li>"
+                    }
+
+                }
+
+            }
+            document.getElementById("articles").innerHTML = output
+        }
+    }
+
+    
+    </script>
+    <div id="articles"></div>
+</body>
+</html>
